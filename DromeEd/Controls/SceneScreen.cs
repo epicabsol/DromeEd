@@ -325,7 +325,7 @@ namespace DromeEd.Controls
 
                 public Frame(string animationFilename, Drome.IFLFile.IFLFrame frame, SceneScreen screen)
                 {
-                    SRV = screen.GetTexture(Path.Combine(Path.GetDirectoryName(animationFilename), frame.TextureFilename.Replace(".tga", ".pc texture")));
+                    SRV = screen.GetTexture(Path.Combine(Path.GetDirectoryName(animationFilename), frame.TextureFilename.Replace(".tga", "." + Drome.Context.Current.Platform.ToString() + " texture")));
                     Length = frame.DurationTicks / 30.0f;
                 }
             }
