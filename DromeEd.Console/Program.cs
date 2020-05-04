@@ -18,7 +18,7 @@ namespace DromeEd.Console
 
         static void LR2ModelExport(System.IO.StreamWriter log)
         {
-            Context.Current = new Context(Context.NextGenGame.LegoRacers2, "");
+            Context.Current = new Context(Context.NextGenGame.LegoRacers2, Context.GamePlatform.PC, "");
 
             System.Windows.Forms.OpenFileDialog odialog = new System.Windows.Forms.OpenFileDialog();
             odialog.Filter = "MD2 Model (*.MD2)|*.MD2";

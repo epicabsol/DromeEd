@@ -716,7 +716,7 @@ namespace DromeEd.Controls
                     }
                     else
                     {
-                        RenderTexture t = new RenderTexture(GetTexture(r.MapName.Replace(".tga", ".pc texture")));
+                        RenderTexture t = new RenderTexture(GetTexture(r.MapName.Replace(".tga", "." + Drome.Context.Current.Platform.ToString() + " texture")));
                         return t;
                     }
                 }
