@@ -355,7 +355,28 @@ namespace ATD.VFS
 
         public void LoadRaw(string directory, int version)
         {
+            this.GameData = new MemoryStream();
+            Stack<string> recursePaths = new Stack<string>();
+            recursePaths.Push(Path.Combine(directory, "Game Data"));
 
+            while (recursePaths.Count > 0)
+            {
+                string dir = recursePaths.Pop();
+                foreach (string filename in System.IO.Directory.EnumerateFiles(dir))
+                {
+                    long start = GameData.Length;
+                    using (System.IO.FileStream stream = new FileStream(filename, FileMode.Open))
+                    {
+                        stream.CopyTo(GameData);
+                    }
+                    string relativePath = filename.Substring(directory.Length + 1).ToLower();
+                    this.Files.Add(relativePath, new FileEntry(relativePath, (uint)start, (uint)(GameData.Length - start)));
+                }
+                foreach (string subdir in System.IO.Directory.EnumerateDirectories(dir))
+                {
+                    recursePaths.Push(subdir);
+                }
+            }
         }
 
         public void WriteArchive(string directory, bool compressed)

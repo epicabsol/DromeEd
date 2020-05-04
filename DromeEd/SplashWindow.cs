@@ -111,22 +111,43 @@ namespace DromeEd
         private async void SplashWindow_Load(object sender, EventArgs e)
         {
             string gameFolder = Program.Config["Context"]["GameFolder"];
+            bool loadUnpacked = Program.Config["Context"]["LoadUnpacked"].ToLowerInvariant() == "true";
             if (gameFolder == "")
             {
-                OpenFileDialog dialog = new OpenFileDialog();
-                dialog.Title = "Browse for GameData.gtc";
-                dialog.Filter = "Saracen 2 Game Data (*.gtc)|*.gtc";
-                if (dialog.ShowDialog() == DialogResult.OK)
+                if (loadUnpacked)
                 {
-                    gameFolder = System.IO.Path.GetDirectoryName(dialog.FileName);
-                    Program.Config["Context"]["GameFolder"] = gameFolder;
-                    Activate();
+                    FolderBrowserDialog dialog = new FolderBrowserDialog();
+                    dialog.Description = "Browse for GameData directory";
+                    if (dialog.ShowDialog() == DialogResult.OK)
+                    {
+                        gameFolder = System.IO.Path.GetDirectoryName(dialog.SelectedPath);
+                        Program.Config["Context"]["GameFolder"] = gameFolder;
+                        Activate();
+                    }
+                    else
+                    {
+                        LoadSuccessful = false;
+                        Close();
+                        return;
+                    }
                 }
                 else
                 {
-                    LoadSuccessful = false;
-                    Close();
-                    return;
+                    OpenFileDialog dialog = new OpenFileDialog();
+                    dialog.Title = "Browse for GameData.gtc";
+                    dialog.Filter = "Saracen 2 Game Data (*.gtc)|*.gtc";
+                    if (dialog.ShowDialog() == DialogResult.OK)
+                    {
+                        gameFolder = System.IO.Path.GetDirectoryName(dialog.FileName);
+                        Program.Config["Context"]["GameFolder"] = gameFolder;
+                        Activate();
+                    }
+                    else
+                    {
+                        LoadSuccessful = false;
+                        Close();
+                        return;
+                    }
                 }
             }
             Drome.Context.Current = new Drome.Context(Drome.Context.NextGenGame.DromeRacers, gameFolder);
@@ -138,7 +159,14 @@ namespace DromeEd
             {
                 try
                 {
-                    Program.Filesystem.LoadArchive(Drome.Context.Current.GamePath);
+                    if (loadUnpacked)
+                    {
+                        Program.Filesystem.LoadRaw(gameFolder, 2);
+                    }
+                    else
+                    {
+                        Program.Filesystem.LoadArchive(Drome.Context.Current.GamePath);
+                    }
                     LoadSuccessful = true;
                 }
                 catch (OperationCanceledException)
