@@ -34,6 +34,7 @@ namespace DromeEd.Controls
         {
             World = world;
 
+            SceneTreeView.BeginUpdate();
             foreach (Drome.Object o in world.Objects)
             {
                 TreeNode node = new TreeNode(o.InstanceName);
@@ -56,6 +57,7 @@ namespace DromeEd.Controls
                     Screen.Nodes.Add(n);
                 }
             }
+            SceneTreeView.EndUpdate();
         }
 
         public void LoadWorld(FileEntry file)

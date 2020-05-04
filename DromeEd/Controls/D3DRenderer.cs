@@ -173,7 +173,11 @@ namespace DromeEd.Controls
         public void Initialize()
         {
             SwapChainDescription scdesc = new SwapChainDescription() { BufferCount = 1, IsWindowed = true, Flags = SwapChainFlags.None, ModeDescription = new ModeDescription(Width, Height, new Rational(60, 1), Format.B8G8R8A8_UNorm), OutputHandle = Handle, SampleDescription = new SampleDescription(1, 0), SwapEffect = SwapEffect.Discard, Usage = Usage.RenderTargetOutput };
-            SharpDX.Direct3D11.Device.CreateWithSwapChain(SharpDX.Direct3D.DriverType.Hardware, DeviceCreationFlags.BgraSupport | DeviceCreationFlags.Debug, scdesc, out SharpDX.Direct3D11.Device device, out SwapChain sc);
+            DeviceCreationFlags flags = DeviceCreationFlags.BgraSupport;
+#if DEBUG
+            flags |= DeviceCreationFlags.Debug;
+#endif
+            SharpDX.Direct3D11.Device.CreateWithSwapChain(SharpDX.Direct3D.DriverType.Hardware, flags, scdesc, out SharpDX.Direct3D11.Device device, out SwapChain sc);
             DXGISwapChain = sc;
             D3DDevice = device;
             D3DContext = D3DDevice.ImmediateContext;
