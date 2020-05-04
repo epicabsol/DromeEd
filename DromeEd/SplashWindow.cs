@@ -68,7 +68,47 @@ namespace DromeEd
 
         private Task LoadTask;
 
-        private async void SplashWindow_HandleCreated(object sender, EventArgs e)
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            base.OnPaint(e);
+            SolidBrush backgroundBrush = new SolidBrush(Theme.BackgroundColor);
+            SolidBrush foregroundBrush = new SolidBrush(Theme.ForegroundColor);
+            SolidBrush appbrush = new SolidBrush(Theme.ApplicationColor);
+            SolidBrush textBrush = new SolidBrush(Theme.TextColor);
+            e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+            e.Graphics.FillPolygon(foregroundBrush, new Point[] { new Point(125, 0), new Point(150, Height), new Point(Width, Height), new Point(Width, 0) });
+            e.Graphics.DrawString("Drome", Theme.TitleFont, textBrush, new Point(10, 10));
+            e.Graphics.DrawString("Ed", Theme.TitleFontBold, backgroundBrush, new Point(128, 11));
+            e.Graphics.DrawString("v" + Application.ProductVersion, Theme.StatusFont, textBrush, new Point(17, 55));
+            e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.None;
+            e.Graphics.DrawString(StatusText, Theme.StatusFont, textBrush, new Point(17, Height - 30));
+            if (StatusProgress > 0)
+            {
+                e.Graphics.FillRectangle(appbrush, 2, Height - 3, StatusProgress * (Width - 4), 2);
+            }
+            backgroundBrush.Dispose();
+            foregroundBrush.Dispose();
+            appbrush.Dispose();
+            textBrush.Dispose();
+        }
+
+        protected override void OnResize(EventArgs e)
+        {
+            base.OnResize(e);
+            if (WindowState == FormWindowState.Maximized)
+                WindowState = FormWindowState.Normal;
+            Invalidate();
+        }
+
+        protected override async void OnClosed(EventArgs e)
+        {
+            Program.Filesystem?.Cancel();
+            if (LoadTask != null)
+                await LoadTask;
+            base.OnClosed(e);
+        }
+
+        private async void SplashWindow_Load(object sender, EventArgs e)
         {
             string gameFolder = Program.Config["Context"]["GameFolder"];
             if (gameFolder == "")
@@ -113,46 +153,6 @@ namespace DromeEd
             Drome.ClassRegistry.Initialize();
             await Task.Delay(500);
             Close();
-        }
-
-        protected override void OnPaint(PaintEventArgs e)
-        {
-            base.OnPaint(e);
-            SolidBrush backgroundBrush = new SolidBrush(Theme.BackgroundColor);
-            SolidBrush foregroundBrush = new SolidBrush(Theme.ForegroundColor);
-            SolidBrush appbrush = new SolidBrush(Theme.ApplicationColor);
-            SolidBrush textBrush = new SolidBrush(Theme.TextColor);
-            e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-            e.Graphics.FillPolygon(foregroundBrush, new Point[] { new Point(125, 0), new Point(150, Height), new Point(Width, Height), new Point(Width, 0) });
-            e.Graphics.DrawString("Drome", Theme.TitleFont, textBrush, new Point(10, 10));
-            e.Graphics.DrawString("Ed", Theme.TitleFontBold, backgroundBrush, new Point(128, 11));
-            e.Graphics.DrawString("v" + Application.ProductVersion, Theme.StatusFont, textBrush, new Point(17, 55));
-            e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.None;
-            e.Graphics.DrawString(StatusText, Theme.StatusFont, textBrush, new Point(17, Height - 30));
-            if (StatusProgress > 0)
-            {
-                e.Graphics.FillRectangle(appbrush, 2, Height - 3, StatusProgress * (Width - 4), 2);
-            }
-            backgroundBrush.Dispose();
-            foregroundBrush.Dispose();
-            appbrush.Dispose();
-            textBrush.Dispose();
-        }
-
-        protected override void OnResize(EventArgs e)
-        {
-            base.OnResize(e);
-            if (WindowState == FormWindowState.Maximized)
-                WindowState = FormWindowState.Normal;
-            Invalidate();
-        }
-
-        protected override async void OnClosed(EventArgs e)
-        {
-            Program.Filesystem?.Cancel();
-            if (LoadTask != null)
-                await LoadTask;
-            base.OnClosed(e);
         }
     }
 }

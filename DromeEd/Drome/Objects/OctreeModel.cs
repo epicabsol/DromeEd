@@ -10,11 +10,6 @@ namespace DromeEd.Drome.Objects
     [ObjectType("cOctreeModel")]
     public class OctreeModel : Object
     {
-        public class OctreeNode
-        {
-
-        }
-
         public string VOMFilename;
         public AtomPhysicsData Physics;
 
@@ -29,6 +24,16 @@ namespace DromeEd.Drome.Objects
 
         public OctreeModel(ObjectHeader header, BinaryReader reader) : base(header, reader)
         {
+            this.VOMFilename = reader.ReadStringFileName();
+            this.Physics = new AtomPhysicsData(reader);
+            this.RenderLeafs = reader.ReadInt32() != 0;
+            this.ShowVisLeaf = reader.ReadInt32() != 0;
+            this.DebugZBuffer = reader.ReadInt32() != 0;
+            this.TriangleCounts = reader.ReadInt32() != 0;
+            this.LockVisibility = reader.ReadInt32() != 0;
+            this.CyclePVSLeafs = reader.ReadInt32() != 0;
+            this.DrawNonPVSLeafs = reader.ReadInt32() != 0;
+
 
         }
     }

@@ -16,7 +16,7 @@ namespace DromeEd.Drome.Objects
 
         public Skybox(ObjectHeader header, BinaryReader reader) : base(header, reader)
         {
-            ModelFilename = reader.ReadStringFilename();
+            ModelFilename = reader.ReadStringFileName();
             IsWeatherSpecific = reader.ReadUInt32() > 0;
             IsRaining = reader.ReadUInt32() > 0;
         }

@@ -46,7 +46,7 @@
             this.Name = "SplashWindow";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "DromeEd Starting...";
-            this.HandleCreated += new System.EventHandler(this.SplashWindow_HandleCreated);
+            this.Load += new System.EventHandler(this.SplashWindow_Load);
             this.ResumeLayout(false);
 
         }

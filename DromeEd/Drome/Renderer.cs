@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SharpDX;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -105,7 +106,7 @@ namespace DromeEd.Drome
         }
     }
 
-    public class IndexBuffer // loaded as sTempPrimData and used as cPrimitiveBuffer
+    public class IndexBuffer // loaded as sTempPrimData (without PrimitiveBufferCount) and used as cPrimitiveBuffer
     {
         public uint PrimitiveBufferCount;
         public PrimitiveType PrimitiveType;
@@ -114,10 +115,68 @@ namespace DromeEd.Drome
 
         public IndexBuffer(BinaryReader reader)
         {
-            PrimitiveBufferCount = reader.ReadUInt32();
+            
             PrimitiveType = (PrimitiveType)reader.ReadUInt32();
             IndexCount = reader.ReadUInt32();
             IndexData = reader.ReadBytes((int)IndexCount * 2); // 2 bytes per index
+        }
+    }
+
+    public class TextureReference // sBitMapName
+    {
+        public const int NameSize = 256;
+
+        public string MapName = "";
+        public Texture.MapType MapType;
+        public int BaseIndex;
+
+        public TextureReference(BinaryReader reader)
+        {
+            MapName = reader.ReadStringN(NameSize);
+            MapType = (Texture.MapType)reader.ReadUInt32();
+            BaseIndex = reader.ReadInt32();
+        }
+    }
+
+    [Flags()]
+    public enum MaterialFlagProps
+    {
+        Collidable = (1 << 0),
+        CastShadowMap = (1 << 1),
+        Invisible = (1 << 2),
+        TwoSided = (1 << 3),
+        NoBitmapShadows = (1 << 4),
+        FlatDiffuse = (1 << 5)
+    }
+
+    public class MaterialProps // cMaterialProps, sizeof: 0x5C
+    {
+        private const int AnimationNameSize = 8;
+
+        public Vector4 Ambient;
+        public Vector4 Diffuse;
+        public Vector4 Specular;
+        public Vector4 Emissive;
+        public float Shininess;
+        public float Transparency;
+        public uint TransparencyType;
+        public MaterialFlagProps PropertyBits;
+        public string AnimationName;
+        public uint pAnimationCallback = 0;
+
+        public MaterialProps(BinaryReader reader)
+        {
+            System.Diagnostics.Debug.WriteLine("Reading cMaterialProps starting at offset 0x" + reader.BaseStream.Position.ToString("X8"));
+            Ambient = reader.ReadVector4();
+            Diffuse = reader.ReadVector4();
+            Specular = reader.ReadVector4();
+            Emissive = reader.ReadVector4();
+            Shininess = reader.ReadSingle();
+            Transparency = reader.ReadSingle();
+            TransparencyType = reader.ReadUInt32();
+            PropertyBits = (MaterialFlagProps)reader.ReadUInt32();
+            AnimationName = reader.ReadStringN(AnimationNameSize);
+            pAnimationCallback = reader.ReadUInt32();
         }
     }
 
@@ -145,7 +204,7 @@ namespace DromeEd.Drome
         public VertexBuffer VertexBuffer;
         public IndexBuffer IndexBuffer;
 
-        public RenderGroup(BinaryReader reader)
+        public RenderGroup(BinaryReader reader, bool readPrimBufferCount)
         {
             if (Context.Current.Game >= Context.NextGenGame.DromeRacers)
                 ID = reader.ReadUInt32();
@@ -169,7 +228,9 @@ namespace DromeEd.Drome
             }
 
             VertexBuffer = new VertexBuffer(reader);
+            uint primitiveBufferCount = readPrimBufferCount ? reader.ReadUInt32() : 0;
             IndexBuffer = new IndexBuffer(reader);
+            IndexBuffer.PrimitiveBufferCount = primitiveBufferCount;
         }
     }
 }

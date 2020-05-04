@@ -16,51 +16,6 @@ namespace DromeEd.Drome
         }
     }
 
-    public class TextureReference
-    {
-        private const int NameSize = 256;
-
-        public string MapName = "";
-        public Texture.MapType MapType;
-        public int BaseIndex;
-
-        public TextureReference(BinaryReader reader)
-        {
-            MapName = reader.ReadStringN(NameSize);
-            MapType = (Texture.MapType)reader.ReadUInt32();
-            BaseIndex = reader.ReadInt32();
-        }
-    }
-
-    public class MaterialProps
-    {
-        private const int AnimationNameSize = 8;
-
-        public Vector4 Ambient;
-        public Vector4 Diffuse;
-        public Vector4 Specular;
-        public Vector4 Emissive;
-        public float Shininess;
-        public float Transparency;
-        public uint TransparencyType;
-        public uint PropertyBits;
-        public string AnimationName;
-        public uint pAnimationCallback = 0;
-
-        public MaterialProps(BinaryReader reader)
-        {
-            Ambient = reader.ReadVector4();
-            Diffuse = reader.ReadVector4();
-            Specular = reader.ReadVector4();
-            Emissive = reader.ReadVector4();
-            Shininess = reader.ReadSingle();
-            Transparency = reader.ReadSingle();
-            TransparencyType = reader.ReadUInt32();
-            PropertyBits = reader.ReadUInt32();
-            AnimationName = reader.ReadStringN(AnimationNameSize);
-        }
-    }
-
     public class BlockHeader
     {
         // MD2 Model
@@ -243,7 +198,7 @@ namespace DromeEd.Drome
                 }
                 for (int i = 0; i < GroupCount; i++)
                 {
-                    RenderGroups.Add(new RenderGroup(reader));
+                    RenderGroups.Add(new RenderGroup(reader, true));
                 }
             }
         }
@@ -278,7 +233,7 @@ namespace DromeEd.Drome
             AnchorName = reader.ReadStringN(NameSize);
             AnchorType = reader.ReadUInt32();
             MaterialIndex = reader.ReadUInt32();
-            LinkedFilename = reader.ReadStringFilename();
+            LinkedFilename = reader.ReadStringFileName();
             AnchorPos = reader.ReadVector3();
             Forward = reader.ReadVector3();
             Right = reader.ReadVector3();

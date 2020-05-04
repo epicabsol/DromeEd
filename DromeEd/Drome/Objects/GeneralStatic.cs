@@ -11,7 +11,7 @@ namespace DromeEd.Drome.Objects
     public class GeneralStatic : Object
     {
         public AtomPhysicsData AtomPhysicsData;
-        public string ModelFilename = ""; // max 0x80 bytes, 0x7F chars
+        public string ModelFilename = "";
         public bool IsModelUnique = false; // true: Load a new instance of this model even if one already exists
         public bool UseModelForCollision = false; // true: generate collision shape from mesh data
         // 0x02 bytes padding
@@ -19,7 +19,7 @@ namespace DromeEd.Drome.Objects
         public GeneralStatic(ObjectHeader header, BinaryReader reader) : base(header, reader)
         {
             AtomPhysicsData = new AtomPhysicsData(reader);
-            ModelFilename = reader.ReadStringFilename();
+            ModelFilename = reader.ReadStringFileName();
             IsModelUnique = reader.ReadByte() > 0;
             UseModelForCollision = reader.ReadByte() > 0;
         }

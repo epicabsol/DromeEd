@@ -50,6 +50,11 @@ namespace DromeEd.Controls
                     SceneNodes.WeaponPickupSceneNode n = new SceneNodes.WeaponPickupSceneNode(Screen, o as Drome.Objects.WeaponPickup);
                     Screen.Nodes.Add(n);
                 }
+                else if (o.Header.ClassName == "cOctreeModel")
+                {
+                    SceneNodes.OctreeModelSceneNode n = new SceneNodes.OctreeModelSceneNode(Screen, o as Drome.Objects.OctreeModel);
+                    Screen.Nodes.Add(n);
+                }
             }
         }
 

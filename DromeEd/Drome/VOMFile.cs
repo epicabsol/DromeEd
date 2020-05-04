@@ -10,7 +10,70 @@ namespace DromeEd.Drome
 {
     public class VOMFile
     {
-        
+        public class OctreeNode : VisOctreeNode
+        {
+            public Vector3 Min;
+            public Vector3 Max;
+
+            public OctreeNode(BinaryReader reader) : base(reader)
+            {
+                this.Min = reader.ReadVector3();
+                this.Max = reader.ReadVector3();
+            }
+        }
+
+        public class OctreeLeaf
+        {
+            public int VisID;
+            public Vector3 Min;
+            public Vector3 Max;
+            public int FirstGroup; // Index into RenderGroups
+            public int GroupCount;
+
+            public OctreeLeaf(BinaryReader reader)
+            {
+                this.VisID = reader.ReadInt32();
+                this.Min = reader.ReadVector3();
+                this.Max = reader.ReadVector3();
+                this.FirstGroup = reader.ReadInt32();
+                this.GroupCount = reader.ReadInt32();
+            }
+        }
+
+        public class VisOctreeNode
+        {
+            private const int ChildCount = 8;
+
+            public int[] Children;
+            public float XPlaneDistance;
+            public float YPlaneDistance;
+            public float ZPlaneDistance;
+
+            public VisOctreeNode(BinaryReader reader)
+            {
+                this.Children = new int[ChildCount];
+                for (int i = 0; i < Children.Length; i++)
+                {
+                    this.Children[i] = reader.ReadInt32();
+                }
+
+                this.XPlaneDistance = reader.ReadSingle();
+                this.YPlaneDistance = reader.ReadSingle();
+                this.ZPlaneDistance = reader.ReadSingle();
+            }
+        }
+
+        public class VisOctreeLeaf
+        {
+            public int LeafVisOffset;
+            public int ObjectVisOffset;
+
+            public VisOctreeLeaf(BinaryReader reader)
+            {
+                this.LeafVisOffset = reader.ReadInt32();
+                this.ObjectVisOffset = reader.ReadInt32();
+            }
+        }
 
         public class VOMHeader
         {
@@ -92,14 +155,129 @@ namespace DromeEd.Drome
 
         public VOMHeader Header;
 
-        public int[] BitmapIndices;
-        public int[] MaterialIndices;
+        public TextureReference[] BitmapIndices;
+        public MaterialProps[] MaterialIndices;
+
+        public RenderGroup[] RenderGroups;
+        public OctreeNode[] Nodes;
+        public OctreeLeaf[] Leafs;
+        public int[] RenderGroupIndices;
+        //public int[] RenderGroupOrders;
+        public Vector3[] GroupBounds;
+        public VisOctreeNode[] VisNodes;
+        public VisOctreeLeaf[] VisLeafs;
+        public byte[] LeafVisData;
+        public byte[] ObjectVisData;
+        public string[] DetailModels;
 
         public VOMFile(BinaryReader reader)
         {
+            //
+            // cOctreeModel::ReadHeaderAndAllocateMemory
+            //
             this.Header = new VOMHeader(reader);
-            this.BitmapIndices = new int[Header.NumBitmaps];
-            this.MaterialIndices = new int[Header.NumMaterials];
+
+            this.BitmapIndices = new TextureReference[Header.NumBitmaps];
+            this.MaterialIndices = new MaterialProps[Header.NumMaterials];
+
+            this.RenderGroups = new RenderGroup[Header.NumRenderGroups];
+            this.Nodes = new OctreeNode[Header.NumNodes];
+            this.Leafs = new OctreeLeaf[Header.NumLeafs];
+            this.RenderGroupIndices = new int[Header.NumRenderGroupIndices];
+            //this.RenderGroupOrders = new int[Header.NumRenderGroupIndices];
+            this.GroupBounds = new Vector3[Header.NumRenderGroups * 2];
+            this.VisNodes = new VisOctreeNode[Header.NumVisNodes];
+            this.VisLeafs = new VisOctreeLeaf[Header.NumVisLeafs];
+            //this.LeafVisData = new byte[Header.LeafVisDataSize];
+            //this.ObjectVisData = new byte[Header.ObjectVisDataSize];
+            this.DetailModels = new string[Header.NumDetailModels];
+
+            //
+            // ReadBitmaps
+            //
+            //const int textureReferenceLength = TextureReference.NameSize + sizeof(int) + sizeof(int);
+            //int textureCount = reader.ReadInt32() / textureReferenceLength;
+            int bitmapBlockLength = reader.ReadInt32();
+            for (int i = 0; i < Header.NumBitmaps; i++)
+            {
+                this.BitmapIndices[i] = new TextureReference(reader);
+            }
+
+            //
+            // ReadMaterials
+            //
+            int materialBlocklength = reader.ReadInt32();
+            for (int i = 0; i < Header.NumMaterials; i++)
+            {
+                this.MaterialIndices[i] = new MaterialProps(reader);
+            }
+
+            //
+            // ReadGCNGeometry
+            //
+            int gcnBlockLength = reader.ReadInt32();
+            reader.BaseStream.Position += gcnBlockLength;
+
+            //
+            // ReadPS2Geometry
+            //
+            int ps2BlockLength = reader.ReadInt32();
+            reader.BaseStream.Position += ps2BlockLength;
+
+            //
+            // ReadRenderGroups
+            //
+            int renderGroupBlockLength = reader.ReadInt32();
+            for (int i = 0; i < Header.NumRenderGroups * 2; i++)
+            {
+                this.GroupBounds[i] = reader.ReadVector3();
+            }
+            for (int i = 0; i < Header.NumRenderGroups; i++)
+            {
+                this.RenderGroups[i] = new RenderGroup(reader, false);
+            }
+
+            //
+            // ReadOctreeData
+            //
+            int octreeBlockLength = reader.ReadInt32();
+            for (int i = 0; i < Header.NumNodes; i++)
+            {
+                this.Nodes[i] = new OctreeNode(reader);
+            }
+            for (int i = 0; i < Header.NumLeafs; i++)
+            {
+                this.Leafs[i] = new OctreeLeaf(reader);
+            }
+            for (int i = 0; i < Header.NumRenderGroupIndices; i++)
+            {
+                this.RenderGroupIndices[i] = reader.ReadInt32();
+            }
+
+            //
+            // ReadVisibilityData
+            //
+            int visibilityBlockLength = reader.ReadInt32();
+            for (int i = 0; i < Header.NumVisNodes; i++)
+            {
+                this.VisNodes[i] = new VisOctreeNode(reader);
+            }
+            for (int i = 0; i < Header.NumVisLeafs; i++)
+            {
+                this.VisLeafs[i] = new VisOctreeLeaf(reader);
+            }
+            this.LeafVisData = reader.ReadBytes(Header.LeafVisDataSize);
+            this.ObjectVisData = reader.ReadBytes(Header.ObjectVisDataSize);
+            for (int i = 0; i < Header.NumDetailModels; i++)
+            {
+                this.DetailModels[i] = reader.ReadString24();
+            }
+
+        }
+
+        public void ExportOBJ(string filename)
+        {
+
         }
     }
 }

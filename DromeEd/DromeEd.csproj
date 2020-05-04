@@ -146,6 +146,7 @@
     <Compile Include="Editors\TextureEditor.cs" />
     <Compile Include="Editors\WorldEditor.cs" />
     <Compile Include="INIConfig.cs" />
+    <Compile Include="SceneNodes\OctreeModelSceneNode.cs" />
     <Compile Include="Transformable.cs" />
     <Compile Include="MainWindow.cs">
       <SubType>Form</SubType>

@@ -49,6 +49,27 @@ namespace DromeEd.Console
         [STAThread()]
         static void Main(string[] args)
         {
+            string[] files = { 
+                @"E:\Projects\Modding\Drome Racers\ARENA_CAR_textures\ARENA CAR\COLOUR_4\ARENA_CAR.XBX TEXTURE",
+                @"E:\Projects\Modding\Drome Racers\ARENA_CAR_textures\ARENA CAR\COLOUR_4\COPY OF COLOUR_4\ARENA_CAR.XBX TEXTURE",
+                @"E:\Projects\Modding\Drome Racers\ARENA_CAR_textures\ARENA CAR\COLOUR_4\COPY (2) OF COLOUR_4\ARENA_CAR.XBX TEXTURE"
+            };
+            foreach (string p in files)
+            {
+                using (System.IO.FileStream s = new System.IO.FileStream(p, System.IO.FileMode.Open))
+                using (System.IO.BinaryReader reader = new System.IO.BinaryReader(s))
+                {
+                    Texture t = new Texture(reader);
+                    t.DumpTGA(p + ".tga");
+                }
+
+            }
+
+            System.Console.WriteLine("Done.");
+            System.Console.ReadLine();
+
+            return;
+
             System.IO.StreamWriter log = new System.IO.StreamWriter("log.txt", false);
 
             /*LR2ModelExport(log);

@@ -19,7 +19,7 @@ namespace DromeEd.Controls
         public float Yaw;
         public float Pitch;
         //public float Offset = 5;
-        public SlideValue Offset = new SlideValue(10, 5);
+        public SlideValue Offset = new SlideValue(100, 50);
 
         public float FOV = MathUtil.PiOverTwo;
         public float ZNear = 0.2f;
@@ -624,6 +624,8 @@ namespace DromeEd.Controls
 
 
         private bool Orbiting = false;
+        private bool Panning = false;
+        private bool Zooming = false;
         private int LastX = 0;
         private int LastY = 0;
         public override void OnMouseDown(int x, int y, MouseButtons button)
@@ -632,6 +634,14 @@ namespace DromeEd.Controls
             if (button == MouseButtons.Left)
             {
                 Orbiting = true;
+            }
+            if (button == MouseButtons.Middle)
+            {
+                Panning = true;
+            }
+            if (button == MouseButtons.Right)
+            {
+                Zooming = true;
             }
             LastX = x;
             LastY = y;
@@ -650,6 +660,17 @@ namespace DromeEd.Controls
                 else if (Camera.Pitch < -MathUtil.PiOverTwo)
                     Camera.Pitch = -MathUtil.PiOverTwo;
             }
+            if (Panning)
+            {
+                Matrix m = Camera.BuildViewMatrix();
+                m.Invert();
+                Camera.Position += m.Left * (x - LastX);
+                Camera.Position += m.Up * (y - LastY);
+            }
+            if (Zooming)
+            {
+                Camera.Offset.TargetValue = (1.0f + (y - LastY) * 0.03f) * Camera.Offset.TargetValue;
+            }
 
             LastX = x;
             LastY = y;
@@ -658,18 +679,59 @@ namespace DromeEd.Controls
         public override void OnMouseUp(int x, int y, MouseButtons button)
         {
             base.OnMouseUp(x, y, button);
-            Orbiting = false;
+            if (button == MouseButtons.Left)
+            {
+                Orbiting = false;
+            }
+            if (button == MouseButtons.Middle)
+            {
+                Panning = false;
+            }
+            if (button == MouseButtons.Right)
+            {
+                Zooming = false;
+            }
         }
 
         public override void OnMouseWheel(int amount)
         {
             base.OnMouseWheel(amount);
-            Camera.Offset.TargetValue += ((float)amount / 120.0f) * Camera.Offset.TargetValue * 0.3f;
+            Camera.Offset.TargetValue += ((float)amount / 120.0f) * Camera.Offset.TargetValue * -0.3f;
         }
 
-
-
-
+        public RenderTexture LoadTextureReference(TextureReference r)
+        {
+            if (r.MapType == Drome.Texture.MapType.Base)
+            {
+                try
+                {
+                    if (r.MapName.ToLower().EndsWith(".ifl"))
+                    {
+                        using (MemoryStream ms = new MemoryStream(Program.Filesystem.GetFileData(Program.Filesystem.GetFileEntry(r.MapName))))
+                        {
+                            Drome.IFLFile ifl = new Drome.IFLFile(ms, r.MapName);
+                            AnimatedTexture a = new AnimatedTexture(ifl, this);
+                            return a;
+                        }
+                    }
+                    else
+                    {
+                        RenderTexture t = new RenderTexture(GetTexture(r.MapName.Replace(".tga", ".pc texture")));
+                        return t;
+                    }
+                }
+                catch
+                {
+                    System.Diagnostics.Debug.WriteLine("ERROR: Exception loading base texture '" + r.MapName + "'.");
+                    return null;
+                }
+            }
+            else
+            {
+                System.Diagnostics.Debug.WriteLine("Extra TextureReference map type: " + r.MapType.ToString() + " (" + r.MapType + ")");
+                return null;
+            }
+        }
 
         public List<Mesh> LoadModel(Drome.MD2File model)
         {
@@ -677,40 +739,12 @@ namespace DromeEd.Controls
             Drome.MDLBlock mdl = model.Blocks[Drome.BlockHeader.MAGIC_MODEL3] as Drome.MDLBlock;
             List<Mesh> result = new List<Mesh>();
 
-            List<RenderTexture> Textures = new List<RenderTexture>();
+            List<RenderTexture> textures = new List<RenderTexture>();
 
             int i = 0;
             foreach (Drome.TextureReference r in mdl.TextureReferences)
             {
-                if (r.MapType == Drome.Texture.MapType.Base)
-                {
-                    try
-                    {
-                        if (r.MapName.ToLower().EndsWith(".ifl"))
-                        {
-                            using (MemoryStream ms = new MemoryStream(Program.Filesystem.GetFileData(Program.Filesystem.GetFileEntry(r.MapName))))
-                            {
-                                Drome.IFLFile ifl = new Drome.IFLFile(ms, r.MapName);
-                                AnimatedTexture a = new AnimatedTexture(ifl, this);
-                                Textures.Add(a);
-                            }
-                        }
-                        else
-                        {
-                            RenderTexture t = new RenderTexture(GetTexture(r.MapName.Replace(".tga", ".pc texture")));
-                            Textures.Add(t);
-                        }
-                    }
-                    catch
-                    {
-                        System.Diagnostics.Debug.WriteLine("ERROR: Exception loading base texture '" + r.MapName + "'.");
-                    }
-                }
-                else
-                {
-                    Textures.Add(null); // Preserve order
-                    System.Diagnostics.Debug.WriteLine("Extra TextureReference map type: " + r.MapType.ToString() + " (" + r.MapType + ")");
-                }
+                textures.Add(LoadTextureReference(r));
                 i++;
             }
 
@@ -739,9 +773,9 @@ namespace DromeEd.Controls
                         if (blend.Effect == Drome.Texture.MapType.Base)
                         {
                             System.Diagnostics.Debug.WriteLine("Found base map!");
-                            if (blend.TextureIndex < Textures.Count)
+                            if (blend.TextureIndex < textures.Count)
                             {
-                                mesh.DiffuseTexture = Textures[blend.TextureIndex];
+                                mesh.DiffuseTexture = textures[blend.TextureIndex];
                                 mesh.SamplerMirrorU = blend.TilingInfo.HasFlag(TextureTileParam.MirrorU);
                                 mesh.SamplerMirrorV = blend.TilingInfo.HasFlag(TextureTileParam.MirrorV);
                             }

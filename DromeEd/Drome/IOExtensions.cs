@@ -89,7 +89,7 @@ namespace DromeEd.Drome
         /// </summary>
         /// <param name="reader"></param>
         /// <returns></returns>
-        public static string ReadStringFilename(this BinaryReader reader)
+        public static string ReadStringFileName(this BinaryReader reader)
         {
             return reader.ReadStringN(FileNameSize);
         }
