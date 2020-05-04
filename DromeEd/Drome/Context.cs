@@ -16,13 +16,24 @@ namespace DromeEd.Drome
             DromeRacers = 2,
         }
 
+        public enum GamePlatform : byte
+        {
+            PC,
+            PS2,
+            GCN,
+            XBX
+        }
+
         public string GamePath { get; private set; }
 
         public NextGenGame Game { get; private set; }
 
-        public Context(NextGenGame game, string gamePath)
+        public GamePlatform Platform { get; private set; }
+
+        public Context(NextGenGame game, GamePlatform platform, string gamePath)
         {
             Game = game;
+            Platform = platform;
             GamePath = gamePath;
         }
     }

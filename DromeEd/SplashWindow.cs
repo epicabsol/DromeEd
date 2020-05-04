@@ -111,6 +111,9 @@ namespace DromeEd
         private async void SplashWindow_Load(object sender, EventArgs e)
         {
             string gameFolder = Program.Config["Context"]["GameFolder"];
+            string platform = Program.Config["Context"]["Platform"];
+            if (platform == "")
+                platform = "PC";
             bool loadUnpacked = Program.Config["Context"]["LoadUnpacked"].ToLowerInvariant() == "true";
             if (gameFolder == "")
             {
@@ -150,7 +153,7 @@ namespace DromeEd
                     }
                 }
             }
-            Drome.Context.Current = new Drome.Context(Drome.Context.NextGenGame.DromeRacers, gameFolder);
+            Drome.Context.Current = new Drome.Context(Drome.Context.NextGenGame.DromeRacers, (Drome.Context.GamePlatform)Enum.Parse(typeof(Drome.Context.GamePlatform), platform), gameFolder);
 
             Program.Filesystem = new ATD.VFS.Filesystem();
             Program.Filesystem.LogMessageEvent += (o, message) => { StatusText = message; };
