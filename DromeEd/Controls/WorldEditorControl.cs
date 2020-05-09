@@ -8,6 +8,8 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using ATD.VFS;
+using DromeEd.Drome;
+using System.IO;
 
 namespace DromeEd.Controls
 {
@@ -72,6 +74,37 @@ namespace DromeEd.Controls
         private void WorldEditorControl_Load(object sender, EventArgs e)
         {
             toolStrip1.Renderer = new ToolstripRenderer();
+        }
+
+        private void exportToolStripButton_Click(object sender, EventArgs e)
+        {
+            FolderBrowserDialog dialog = new FolderBrowserDialog();
+            if (dialog.ShowDialog() == DialogResult.OK)
+            {
+                string directory = dialog.SelectedPath;
+
+                foreach (Drome.Object o in World.Objects)
+                {
+                    if (o is Drome.Objects.OctreeModel octree)
+                    {
+                        try
+                        {
+                            using (System.IO.MemoryStream ms = new System.IO.MemoryStream(Program.Filesystem.GetFileData(Program.Filesystem.GetFileEntry(octree.VOMFilename))))
+                            using (System.IO.BinaryReader reader = new System.IO.BinaryReader(ms))
+                            {
+                                VOMFile vom = new VOMFile(reader);
+                                vom.ExportOBJ(Path.Combine(directory, o.Header.ClassName + "." + o.InstanceName + ".obj"));
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            MessageBox.Show("Exception exporting Octree scene node!\n" + ex.ToString());
+                        }
+
+                    }
+                }
+                MessageBox.Show("Export complete.");
+            }
         }
     }
 }

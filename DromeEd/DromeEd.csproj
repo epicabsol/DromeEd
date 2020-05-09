@@ -256,6 +256,7 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="DromeEd Icon.ico" />
+    <None Include="Resources\UploadDatabase_16x.png" />
     <None Include="Resources\ButtonAnchor.png" />
     <None Include="Resources\ButtonExport.png" />
     <None Include="Resources\NoTexture.tga" />

@@ -23,33 +23,41 @@ namespace DromeEd.SceneNodes
             if (OctreeModel.VOMFilename == "")
                 return;
 
-            using (System.IO.MemoryStream ms = new System.IO.MemoryStream(Program.Filesystem.GetFileData(Program.Filesystem.GetFileEntry(OctreeModel.VOMFilename))))
-            using (System.IO.BinaryReader reader = new System.IO.BinaryReader(ms))
+            try
             {
-                VOMFile = new VOMFile(reader);
-
-                List<SceneScreen.RenderTexture> textures = new List<SceneScreen.RenderTexture>();
-                foreach (TextureReference texref in VOMFile.BitmapIndices)
+                using (System.IO.MemoryStream ms = new System.IO.MemoryStream(Program.Filesystem.GetFileData(Program.Filesystem.GetFileEntry(OctreeModel.VOMFilename))))
+                using (System.IO.BinaryReader reader = new System.IO.BinaryReader(ms))
                 {
-                    textures.Add(screen.LoadTextureReference(texref));
+                    VOMFile = new VOMFile(reader);
+
+                    List<SceneScreen.RenderTexture> textures = new List<SceneScreen.RenderTexture>();
+                    foreach (TextureReference texref in VOMFile.BitmapIndices)
+                    {
+                        textures.Add(screen.LoadTextureReference(texref));
+                    }
+
+                    //VOMFile.ExportOBJ("vom.obj");
+                    foreach (RenderGroup rg in VOMFile.RenderGroups)
+                    {
+                        SceneScreen.Mesh mesh = new SceneScreen.Mesh(screen.Renderer.D3DDevice, rg);
+                        TextureBlend baseBlend = rg.TextureBlends.First(b => b.Effect == Texture.MapType.Base);
+                        if (baseBlend.TextureIndex < textures.Count)
+                        {
+                            mesh.DiffuseTexture = textures[baseBlend.TextureIndex];
+                        }
+                        else
+                        {
+                            System.Diagnostics.Debug.WriteLine("ERROR: TextureBlend.TextureIndex out of range!");
+                            mesh.DiffuseTexture = new SceneScreen.RenderTexture(screen.GetTexture("__error"));
+                        }
+                        Meshes.Add(mesh);
+                    }
                 }
 
-                //VOMFile.ExportOBJ("vom.obj");
-                foreach (RenderGroup rg in VOMFile.RenderGroups)
-                {
-                    SceneScreen.Mesh mesh = new SceneScreen.Mesh(screen.Renderer.D3DDevice, rg);
-                    TextureBlend baseBlend = rg.TextureBlends.First(b => b.Effect == Texture.MapType.Base);
-                    if (baseBlend.TextureIndex < textures.Count)
-                    {
-                        mesh.DiffuseTexture = textures[baseBlend.TextureIndex];
-                    }
-                    else
-                    {
-                        System.Diagnostics.Debug.WriteLine("ERROR: TextureBlend.TextureIndex out of range!");
-                        mesh.DiffuseTexture = new SceneScreen.RenderTexture(screen.GetTexture("__error"));
-                    }
-                    Meshes.Add(mesh);
-                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine("Exception loading octree file: " + OctreeModel.VOMFilename);
             }
         }
 

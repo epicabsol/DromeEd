@@ -370,6 +370,7 @@ namespace ATD.VFS
                         stream.CopyTo(GameData);
                     }
                     string relativePath = filename.Substring(directory.Length + 1).ToLower();
+                    Log("Found " + relativePath + "...");
                     this.Files.Add(relativePath, new FileEntry(relativePath, (uint)start, (uint)(GameData.Length - start)));
                 }
                 foreach (string subdir in System.IO.Directory.EnumerateDirectories(dir))
@@ -377,6 +378,7 @@ namespace ATD.VFS
                     recursePaths.Push(subdir);
                 }
             }
+            Log("Done.");
         }
 
         public void WriteArchive(string directory, bool compressed)

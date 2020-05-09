@@ -277,7 +277,97 @@ namespace DromeEd.Drome
 
         public void ExportOBJ(string filename)
         {
+            using (System.IO.StreamWriter objWriter = new StreamWriter(filename, false))
+            using (System.IO.StreamWriter mtlWriter = new StreamWriter(Path.ChangeExtension(filename, ".mtl"), false))
+            {
+                objWriter.WriteLine("mtllib " + Path.GetFileNameWithoutExtension(filename) + ".mtl");
 
+                HashSet<string> writtenMaterials = new HashSet<string>();
+
+                int vertexOffset = 0;
+
+                foreach (RenderGroup rg in this.RenderGroups)
+                {
+                    TextureBlend baseTexture = rg.TextureBlends.First(tb => tb.Effect == Texture.MapType.Base);
+                    string texturePath = BitmapIndices[baseTexture.TextureIndex].MapName;
+                    string materialName = Path.GetFileNameWithoutExtension(texturePath);
+
+                    // Create the material if it's the first time it's being used
+                    if (!writtenMaterials.Contains(materialName))
+                    {
+                        mtlWriter.WriteLine("newmtl " + materialName);
+                        MaterialProps mat = this.MaterialIndices[rg.Material];
+                        mtlWriter.WriteLine("Ka " + (mat.Ambient.X + mat.Emissive.X) + " " + (mat.Ambient.Y + mat.Emissive.Y) + " " + (mat.Ambient.Z + mat.Emissive.Z));
+                        mtlWriter.WriteLine("Kd " + mat.Diffuse.X + " " + mat.Diffuse.Y + " " + mat.Diffuse.Z);
+                        mtlWriter.WriteLine("Ks " + mat.Specular.X + " " + mat.Specular.Y + " " + mat.Specular.Z);
+                        mtlWriter.WriteLine("Ns " + mat.Shininess);
+                        mtlWriter.WriteLine("d " + (1.0f - mat.Transparency));
+
+                        // Write Texture
+                        if (Program.Filesystem != null)
+                        {
+                            if (texturePath.EndsWith(".tga"))
+                            {
+                                mtlWriter.WriteLine("map_Kd " + Path.GetFileName(texturePath));
+                                using (MemoryStream ms = new MemoryStream(Program.Filesystem.GetFileData(Program.Filesystem.GetFileEntry(texturePath.Replace(".tga", "." + Context.Current.Platform.ToString() + " TEXTURE")))))
+                                using (BinaryReader texReader = new BinaryReader(ms))
+                                {
+                                    Texture tex = new Texture(texReader);
+                                    tex.DumpTGA(Path.Combine(Path.GetDirectoryName(filename), Path.GetFileNameWithoutExtension(texturePath)) + ".tga");
+                                }
+                            }
+                            else if (texturePath.EndsWith(".ifl"))
+                            {
+                                using (MemoryStream iflMs = new MemoryStream(Program.Filesystem.GetFileData(Program.Filesystem.GetFileEntry(texturePath))))
+                                {
+                                    IFLFile ifl = new IFLFile(iflMs, texturePath);
+                                    mtlWriter.WriteLine("map_Kd " + Path.GetFileName(ifl.Frames[0].TextureFilename));
+                                    using (MemoryStream ms = new MemoryStream(Program.Filesystem.GetFileData(Program.Filesystem.GetFileEntry(Path.Combine(Path.GetDirectoryName(texturePath), ifl.Frames[0].TextureFilename.Replace(".tga", "." + Context.Current.Platform.ToString() + " TEXTURE"))))))
+                                    using (BinaryReader texReader = new BinaryReader(ms))
+                                    {
+                                        Texture tex = new Texture(texReader);
+                                        tex.DumpTGA(Path.Combine(Path.GetDirectoryName(filename), Path.GetFileNameWithoutExtension(ifl.Frames[0].TextureFilename)) + ".tga");
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    objWriter.WriteLine("usemtl " + materialName);
+
+                    // Write vertices
+                    for (int v = 0; v < rg.VertexCount; v++)
+                    {
+                        objWriter.WriteLine("v " + (Context.Current.Game == Context.NextGenGame.LegoRacers2 ? -1.0f : -1.0f) * ParseFloat(rg.VertexBuffer.VertexData, v * (int)rg.VertexBuffer.VertexSize + (int)rg.VertexBuffer.PositionOffset) + " " + ParseFloat(rg.VertexBuffer.VertexData, v * (int)rg.VertexBuffer.VertexSize + (int)rg.VertexBuffer.PositionOffset + 4) + " " + ParseFloat(rg.VertexBuffer.VertexData, v * (int)rg.VertexBuffer.VertexSize + (int)rg.VertexBuffer.PositionOffset + 8));
+                        objWriter.WriteLine("vn " + ParseFloat(rg.VertexBuffer.VertexData, v * (int)rg.VertexBuffer.VertexSize + (int)rg.VertexBuffer.NormalOffset) + " " + ParseFloat(rg.VertexBuffer.VertexData, v * (int)rg.VertexBuffer.VertexSize + (int)rg.VertexBuffer.NormalOffset + 4) + " " + ParseFloat(rg.VertexBuffer.VertexData, v * (int)rg.VertexBuffer.VertexSize + (int)rg.VertexBuffer.NormalOffset + 8));
+                        objWriter.WriteLine("vt " + ParseFloat(rg.VertexBuffer.VertexData, v * (int)rg.VertexBuffer.VertexSize + (int)rg.VertexBuffer.UVOffset) + " " + ParseFloat(rg.VertexBuffer.VertexData, v * (int)rg.VertexBuffer.VertexSize + (int)rg.VertexBuffer.UVOffset + 4));
+                    }
+
+                    for (int i = 0; i < rg.IndexBuffer.IndexCount; i += 3)
+                    {
+                        int i1 = BitConverter.ToUInt16(rg.IndexBuffer.IndexData, i * 2) + vertexOffset + 1;
+                        int i2 = BitConverter.ToUInt16(rg.IndexBuffer.IndexData, i * 2 + 2) + vertexOffset + 1;
+                        int i3 = BitConverter.ToUInt16(rg.IndexBuffer.IndexData, i * 2 + 4) + vertexOffset + 1;
+                        /*if (Context.Current.Game == Context.NextGenGame.LegoRacers2)
+                        {
+                            // Flip the order of the indices
+                            int temp = i1;
+                            i1 = i2;
+                            i2 = i3;
+                            i3 = temp;
+                        }*/
+                        objWriter.WriteLine("f " + i1 + "/" + i1 + "/" + i1 + " " + i2 + "/" + i2 + "/" + i2 + " " + i3 + "/" + i3 + "/" + i3);
+                    }
+
+                    vertexOffset += rg.VertexCount;
+                }
+            }
+
+        }
+
+        private static float ParseFloat(byte[] buffer, int offset)
+        {
+            return BitConverter.ToSingle(buffer, offset);
         }
     }
 }

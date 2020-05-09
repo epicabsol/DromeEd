@@ -21,15 +21,23 @@ namespace DromeEd.SceneNodes
             if (GeneralStatic.ModelFilename == "")
                 return;
 
-            using (System.IO.MemoryStream ms = new System.IO.MemoryStream(Program.Filesystem.GetFileData(Program.Filesystem.GetFileEntry(GeneralStatic.ModelFilename))))
-            using (System.IO.BinaryReader reader = new System.IO.BinaryReader(ms))
+            try
             {
-                Drome.MD2File file = new Drome.MD2File(reader);
-            
-                foreach (Controls.SceneScreen.Mesh mesh in screen.LoadModel(file))
+                using (System.IO.MemoryStream ms = new System.IO.MemoryStream(Program.Filesystem.GetFileData(Program.Filesystem.GetFileEntry(GeneralStatic.ModelFilename))))
+                using (System.IO.BinaryReader reader = new System.IO.BinaryReader(ms))
                 {
-                    Meshes.Add(mesh);
+                    Drome.MD2File file = new Drome.MD2File(reader);
+            
+                    foreach (Controls.SceneScreen.Mesh mesh in screen.LoadModel(file))
+                    {
+                        Meshes.Add(mesh);
+                    }
                 }
+
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine("Exception loading model file: " + GeneralStatic.ModelFilename);
             }
         }
 
